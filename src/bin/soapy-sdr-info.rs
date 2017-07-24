@@ -38,7 +38,7 @@ impl fmt::Display for DisplayRange {
 }
 
 fn print_channel_info(dev: &soapysdr::Device, dir: soapysdr::Direction, channel: usize) -> Result<(), soapysdr::Error> {
-    let dir_s = match dir { Rx => "RX", Tx => "Tx"};
+    let dir_s = match dir { Rx => "Rx", Tx => "Tx"};
     println!("\t{} Channel {}", dir_s, channel);
 
     let freq_range = dev.frequency_range(dir, channel)?;
