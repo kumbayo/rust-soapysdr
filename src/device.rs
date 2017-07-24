@@ -4,7 +4,7 @@ use libc;
 use std::slice;
 use std::ptr;
 use std::ffi::{ CStr, CString };
-use std::os::raw::{c_int, c_char};
+use std::os::raw::{c_int, c_char, c_longlong};
 use libc::c_void;
 use num_complex::Complex;
 use std::marker::PhantomData;
@@ -353,8 +353,6 @@ impl Device {
                 device: self,
                 handle: stream,
                 nchannels: channels.len(),
-                flags: 0,
-                time_ns: 0,
                 active: false,
                 phantom: PhantomData,
             })
@@ -381,7 +379,6 @@ impl Device {
                 device: self,
                 handle: stream,
                 nchannels: channels.len(),
-                flags: 0,
                 active: false,
                 phantom: PhantomData,
             })
@@ -752,8 +749,6 @@ pub struct RxStream<'a, E: StreamSample> {
     device: &'a Device,
     handle: *mut SoapySDRStream,
     nchannels: usize,
-    flags: i32,
-    time_ns: i64,
     active: bool,
     phantom: PhantomData<fn(&mut[E])>,
 }
@@ -831,14 +826,15 @@ impl<'a, E: StreamSample> RxStream<'a, E> {
             //TODO: avoid this allocation
             let buf_ptrs = buffers.iter().map(|b| b.as_ptr()).collect::<Vec<_>>();
 
-            self.flags = 0;
+            let mut flags: c_int = 0;
+            let mut time_ns: c_longlong = 0;
             let len = len_result(SoapySDRDevice_readStream(
                 self.device.ptr,
                 self.handle,
                 buf_ptrs.as_ptr() as *const *const _,
                 num_samples,
-                &mut self.flags as *mut _,
-                &mut self.time_ns as *mut _,
+                &mut flags as *mut _,
+                &mut time_ns as *mut _,
                 timeout_us
             ))?;
 
@@ -858,7 +854,6 @@ pub struct TxStream<'a, E: StreamSample> {
     device: &'a Device,
     handle: *mut SoapySDRStream,
     nchannels: usize,
-    flags: i32,
     active: bool,
     phantom: PhantomData<fn(&[E])>,
 }
@@ -939,12 +934,13 @@ impl<'a, E: StreamSample> TxStream<'a, E> {
                 buf_ptrs.push(buf.as_ptr());
             }
 
+            let mut flags: c_int = 0;
             let len = len_result(SoapySDRDevice_writeStream(
                 self.device.ptr,
                 self.handle,
                 buf_ptrs.as_ptr() as *const *const _,
                 num_elems,
-                &mut self.flags as *mut _,
+                &mut flags as *mut _,
                 0,
                 timeout_us
             ))?;
