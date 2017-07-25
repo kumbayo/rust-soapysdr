@@ -926,7 +926,7 @@ impl<'a, E: StreamSample> TxStream<'a, E> {
     /// Returns the number of samples written, which may be smaller than the size of the passed arrays.
     ///
     /// # Panics
-    ///  * If `buffers` is not the same length as the `channels` array passed to `Device::rx_stream`.
+    ///  * If `buffers` is not the same length as the `channels` array passed to `Device::tx_stream`.
     ///  * If all the buffers in `buffers` are not the same length.
     pub fn write(&mut self, buffers: &[&[E]], timeout_us: i64) -> Result<usize, Error> {
         unsafe {
