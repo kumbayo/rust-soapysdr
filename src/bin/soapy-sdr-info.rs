@@ -1,5 +1,6 @@
 use std::env;
 extern crate soapysdr;
+extern crate num_complex;
 use soapysdr::Direction::{Rx, Tx};
 use std::fmt;
 
@@ -9,7 +10,7 @@ fn main() {
     for (i, devargs) in soapysdr::enumerate(&filter[..]).expect("Error listing devices").iter().enumerate() {
         println!("Device #{}: {}", i, devargs);
 
-        let dev = soapysdr::Device::new(devargs).expect("Failed to open device");
+        let mut dev = soapysdr::Device::new(devargs).expect("Failed to open device");
 
         let hardware_info = dev.hardware_info().unwrap();
         println!("Hardware info: {}", hardware_info);
@@ -21,7 +22,32 @@ fn main() {
         for channel in 0..(dev.num_channels(Tx).unwrap_or(0)) {
             print_channel_info(&dev, Tx, channel).expect("Failed to get channel info");
         }
+
+        let stream_result = stream_data(&mut dev);
+        println!("stream_result: {:?}", stream_result);
     }
+}
+
+fn stream_data(dev: &mut soapysdr::Device) -> Result<(), soapysdr::Error> {
+    println!("Setting frequency");
+    dev.set_frequency(Rx, 0, 433_000_000.0, &soapysdr::Args::new())?;
+
+    println!("Creating Rx stream");
+    let mut stream = dev.rx_stream::<num_complex::Complex<i16>>(&[0], &soapysdr::Args::new())?;
+
+    println!("Activating Rx stream");
+    stream.activate(None)?;
+    let mut data_channel_0 = vec![Default::default(); 1000];
+    let data_channels = [data_channel_0.as_mut_slice()];
+
+    println!("Reading Rx stream");
+    let read_result = stream.read(&data_channels, 10_000_000_000/*ns timeout*/)?;
+    println!("Successfully read {} of {} entries from stream", data_channels[0].len(), read_result);
+    println!("{:?}", data_channels[0]);
+
+    println!("Deactivating Rx stream");
+    stream.deactivate(None)?;
+    Ok(())
 }
 
 struct DisplayRange(Vec<soapysdr::Range>);
