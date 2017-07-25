@@ -824,7 +824,7 @@ impl<'a, E: StreamSample> RxStream<'a, E> {
     ///  * If `buffers` is not the same length as the `channels` array passed to `Device::rx_stream`.
     pub fn read(&mut self, buffers: &[&mut[E]], timeout_us: i64) -> Result<usize, Error> {
         unsafe {
-            assert!(buffers.len() == self.nchannels);
+            assert!(buffers.len() == self.nchannels, "Number of buffers must equal number of channels on stream");
 
             let num_samples = buffers.iter().map(|b| b.len()).min().unwrap_or(0);
 
