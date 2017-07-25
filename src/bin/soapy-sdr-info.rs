@@ -6,8 +6,8 @@ use std::fmt;
 fn main() {
     let filter = env::args().nth(1).unwrap_or(String::new());
 
-    for devargs in soapysdr::enumerate(&filter[..]).expect("Error listing devices") {
-        println!("{}", devargs);
+    for (i, devargs) in soapysdr::enumerate(&filter[..]).expect("Error listing devices").iter().enumerate() {
+        println!("Device #{}: {}", i, devargs);
 
         let dev = soapysdr::Device::new(devargs).expect("Failed to open device");
 
