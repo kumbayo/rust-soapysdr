@@ -11,6 +11,9 @@ fn main() {
 
         let dev = soapysdr::Device::new(devargs).expect("Failed to open device");
 
+        let hardware_info = dev.hardware_info().unwrap();
+        println!("Hardware info: {}", hardware_info);
+
         for channel in 0..(dev.num_channels(Rx).unwrap_or(0)) {
             print_channel_info(&dev, Rx, channel).expect("Failed to get channel info");
         }
@@ -46,6 +49,17 @@ fn print_channel_info(dev: &soapysdr::Device, dir: soapysdr::Direction, channel:
 
     let sample_rates = dev.get_sample_rate_range(dir, channel)?;
     println!("\t\tSample rates: {}", DisplayRange(sample_rates));
+
+    let (native, full_scale) = dev.native_stream_format(dir, channel)?;
+    println!("\t\tNative format: {} {}", native, full_scale);
+
+    println!("\t\tAvailable formats:");
+    for format in dev.stream_formats(dir, channel)? {
+        println!("\t\t\t{}", format);
+    }
+
+    let info = dev.channel_info(dir, channel)?;
+    println!("\t\tChannel info: {}", info);
 
     println!("\t\tAntennas: ");
     for antenna in dev.antennas(dir, channel)? {
